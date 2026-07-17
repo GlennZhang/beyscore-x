@@ -1,0 +1,9 @@
+{
+  "name": "Beyscore X",
+  "short_name": "Beyscore X",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#171819",
+  "theme_color": "#171819"
+}

@@ -1,0 +1,38 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+dist-ssr/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量(含密钥,切勿入库)
+.env
+.env.local
+.env.*.local
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 平台本地配置(部署凭证 / 本地项目链接)
+.vercel/
+.wrangler/
+
+# 缓存
+.cache/
+.eslintcache
+
+# 参考素材(非运行必需,代码未引用)
+/spec/
