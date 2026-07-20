@@ -58,6 +58,26 @@ describe('battle', () => {
   });
 });
 
+describe('tournament', () => {
+  it('persists and clears an active tournament', () => {
+    const tournament = { id: 't1', status: 'ongoing', players: [] };
+    storage.saveTournament(tournament);
+    expect(storage.loadTournament()).toEqual(tournament);
+    storage.clearTournament();
+    expect(storage.loadTournament()).toBeNull();
+  });
+});
+
+describe('points league', () => {
+  it('persists and clears an active league', () => {
+    const league = { id: 'l1', status: 'ongoing', players: [] };
+    storage.saveLeague(league);
+    expect(storage.loadLeague()).toEqual(league);
+    storage.clearLeague();
+    expect(storage.loadLeague()).toBeNull();
+  });
+});
+
 describe('resilience', () => {
   it('falls back to default when stored JSON is corrupt', () => {
     localStorage.setItem('beyscorex.teams.v1', '{not valid json');

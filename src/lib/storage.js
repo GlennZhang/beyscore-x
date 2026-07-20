@@ -8,6 +8,8 @@ const KEYS = {
   TEAMS: 'beyscorex.teams.v1',
   HISTORY: 'beyscorex.history.v1',
   BATTLE: 'beyscorex.battle.v1',
+  TOURNAMENT: 'beyscorex.tournament.v1',
+  LEAGUE: 'beyscorex.league.v1',
 };
 
 /**
@@ -62,4 +64,12 @@ export const storage = {
   loadBattle: () => read(KEYS.BATTLE, null),
   saveBattle: (battle) => write(KEYS.BATTLE, battle),
   clearBattle: () => remove(KEYS.BATTLE),
+
+  loadTournament: () => read(KEYS.TOURNAMENT, null),
+  saveTournament: (tournament) => write(KEYS.TOURNAMENT, tournament),
+  clearTournament: () => remove(KEYS.TOURNAMENT),
+
+  loadLeague: () => read(KEYS.LEAGUE, null),
+  saveLeague: (league) => write(KEYS.LEAGUE, league),
+  clearLeague: () => remove(KEYS.LEAGUE),
 };

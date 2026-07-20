@@ -14,6 +14,21 @@ import {
   recordRound as recordRoundFn,
   drawPosition,
 } from '../lib/scoring';
+import {
+  activateTournamentMatch,
+  createTournament as createTournamentFn,
+  findTournamentMatch,
+  getNextTournamentMatch,
+  recordTournamentGame as recordTournamentGameFn,
+} from '../lib/tournament';
+import {
+  activateLeagueMatch,
+  createLeague as createLeagueFn,
+  findLeagueMatch,
+  getNextLeagueMatch,
+  normalizeLeagueSchedule,
+  recordLeagueGame as recordLeagueGameFn,
+} from '../lib/league';
 
 const AppContext = createContext(null);
 
@@ -43,13 +58,49 @@ function buildHistoryEntry(battle) {
     firstPlayer: battle.firstPlayer,
     createdAt: battle.createdAt,
     finishedAt: battle.finishedAt,
+    tournament: battle.tournament ? { ...battle.tournament } : null,
+    league: battle.league ? { ...battle.league } : null,
   };
+}
+
+function createTournamentBattle(tournament, match) {
+  const playerA = tournament.players.find((player) => player.id === match.playerAId);
+  const playerB = tournament.players.find((player) => player.id === match.playerBId);
+  const battle = createBattle(
+    { name: playerA?.name || '玩家 A' },
+    { name: playerB?.name || '玩家 B' }
+  );
+  battle.firstPlayer = drawPosition();
+  battle.tournament = {
+    tournamentId: tournament.id,
+    matchId: match.id,
+    gameNumber: match.games.length + 1,
+  };
+  return battle;
+}
+
+function createLeagueBattle(league, match) {
+  const playerA = league.players.find((player) => player.id === match.playerAId);
+  const playerB = league.players.find((player) => player.id === match.playerBId);
+  const battle = createBattle(
+    { name: playerA?.name || '玩家 A' },
+    { name: playerB?.name || '玩家 B' }
+  );
+  battle.firstPlayer = drawPosition();
+  battle.league = {
+    leagueId: league.id,
+    matchId: match.id,
+    gameNumber: match.games.length + 1,
+  };
+  return battle;
 }
 
 export function AppProvider({ children }) {
   const [teams, setTeams] = useState(() => storage.loadTeams());
   const [history, setHistory] = useState(() => storage.loadHistory());
   const [battle, setBattle] = useState(() => storage.loadBattle());
+  const [tournament, setTournament] = useState(() => storage.loadTournament());
+  const [league, setLeague] = useState(() => normalizeLeagueSchedule(storage.loadLeague()));
 
   // Persist everything to localStorage.
   useEffect(() => storage.saveTeams(teams), [teams]);
@@ -58,6 +109,14 @@ export function AppProvider({ children }) {
     if (battle) storage.saveBattle(battle);
     else storage.clearBattle();
   }, [battle]);
+  useEffect(() => {
+    if (tournament) storage.saveTournament(tournament);
+    else storage.clearTournament();
+  }, [tournament]);
+  useEffect(() => {
+    if (league) storage.saveLeague(league);
+    else storage.clearLeague();
+  }, [league]);
 
   // Guard so each finished battle is added to history exactly once.
   // Seed the guard with ids already persisted in history so a page reload
@@ -167,6 +226,98 @@ export function AppProvider({ children }) {
   }, []);
 
   // -------------------------------------------------------------------------
+  // Tournament actions
+  // -------------------------------------------------------------------------
+  const createTournament = useCallback((names, format) => {
+    const nextTournament = createTournamentFn(names, format);
+    setTournament(nextTournament);
+    setLeague(null);
+    setBattle(null);
+  }, []);
+
+  const startNextTournamentMatch = useCallback(() => {
+    if (!tournament || tournament.status !== 'ongoing') return;
+    const nextMatch = getNextTournamentMatch(tournament);
+    if (!nextMatch) return;
+    const activated = tournament.currentMatchId
+      ? tournament
+      : activateTournamentMatch(tournament, nextMatch.id);
+    const activeMatch = findTournamentMatch(activated, nextMatch.id);
+    setTournament(activated);
+    setBattle(createTournamentBattle(activated, activeMatch));
+  }, [tournament]);
+
+  const restartTournamentGame = useCallback(() => {
+    if (!tournament?.currentMatchId) return;
+    const match = findTournamentMatch(tournament, tournament.currentMatchId);
+    if (match) setBattle(createTournamentBattle(tournament, match));
+  }, [tournament]);
+
+  const completeTournamentGame = useCallback(() => {
+    if (!tournament || !battle?.tournament || battle.status !== 'finished') return;
+    const updated = recordTournamentGameFn(tournament, battle);
+    const updatedMatch = findTournamentMatch(updated, battle.tournament.matchId);
+    setTournament(updated);
+
+    if (updated.status === 'ongoing' && updatedMatch?.status === 'active') {
+      setBattle(createTournamentBattle(updated, updatedMatch));
+    } else {
+      setBattle(null);
+    }
+  }, [battle, tournament]);
+
+  const resetTournament = useCallback(() => {
+    setTournament(null);
+    setBattle((current) => (current?.tournament ? null : current));
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Points league actions
+  // -------------------------------------------------------------------------
+  const createLeague = useCallback((names, options) => {
+    const nextLeague = createLeagueFn(names, options);
+    setLeague(nextLeague);
+    setTournament(null);
+    setBattle(null);
+  }, []);
+
+  const startNextLeagueMatch = useCallback(() => {
+    if (!league || league.status !== 'ongoing') return;
+    const nextMatch = getNextLeagueMatch(league);
+    if (!nextMatch) return;
+    const activated = league.currentMatchId
+      ? league
+      : activateLeagueMatch(league, nextMatch.id);
+    const activeMatch = findLeagueMatch(activated, nextMatch.id);
+    setLeague(activated);
+    setBattle(createLeagueBattle(activated, activeMatch));
+  }, [league]);
+
+  const restartLeagueGame = useCallback(() => {
+    if (!league?.currentMatchId) return;
+    const match = findLeagueMatch(league, league.currentMatchId);
+    if (match) setBattle(createLeagueBattle(league, match));
+  }, [league]);
+
+  const completeLeagueGame = useCallback(() => {
+    if (!league || !battle?.league || battle.status !== 'finished') return;
+    const updated = recordLeagueGameFn(league, battle);
+    const updatedMatch = findLeagueMatch(updated, battle.league.matchId);
+    setLeague(updated);
+
+    if (updated.status === 'ongoing' && updatedMatch?.status === 'active') {
+      setBattle(createLeagueBattle(updated, updatedMatch));
+    } else {
+      setBattle(null);
+    }
+  }, [battle, league]);
+
+  const resetLeague = useCallback(() => {
+    setLeague(null);
+    setBattle((current) => (current?.league ? null : current));
+  }, []);
+
+  // -------------------------------------------------------------------------
   // Derived selectors
   // -------------------------------------------------------------------------
   const allCombos = useMemo(
@@ -187,6 +338,8 @@ export function AppProvider({ children }) {
       teams,
       history,
       battle,
+      tournament,
+      league,
       allCombos,
       getComboById,
       // team/combo
@@ -204,11 +357,25 @@ export function AppProvider({ children }) {
       recordRound,
       rematch,
       resetBattle,
+      // tournament
+      createTournament,
+      startNextTournamentMatch,
+      restartTournamentGame,
+      completeTournamentGame,
+      resetTournament,
+      // points league
+      createLeague,
+      startNextLeagueMatch,
+      restartLeagueGame,
+      completeLeagueGame,
+      resetLeague,
     }),
     [
       teams,
       history,
       battle,
+      tournament,
+      league,
       allCombos,
       getComboById,
       addTeam,
@@ -224,6 +391,16 @@ export function AppProvider({ children }) {
       recordRound,
       rematch,
       resetBattle,
+      createTournament,
+      startNextTournamentMatch,
+      restartTournamentGame,
+      completeTournamentGame,
+      resetTournament,
+      createLeague,
+      startNextLeagueMatch,
+      restartLeagueGame,
+      completeLeagueGame,
+      resetLeague,
     ]
   );
 

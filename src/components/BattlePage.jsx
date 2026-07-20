@@ -33,6 +33,15 @@ import {
 } from '../lib/scoring';
 import Countdown from './Countdown';
 import countdownAudioUrl from '../../data/bgm.MP3?url';
+import TournamentPage, {
+  BattleModeSelector,
+  TournamentGameResult,
+  tournamentSeriesLabel,
+} from './TournamentPage';
+import PointsLeaguePage, {
+  LeagueGameResult,
+  leagueSeriesLabel,
+} from './PointsLeaguePage';
 
 /** Tech / wide font used across the battle-mode UI. */
 const FONT = '"Orbitron", "Chakra Petch", sans-serif';
@@ -161,7 +170,7 @@ function ZIcon({ color = '#fff' }) {
 // ---------------------------------------------------------------------------
 // Setup form (create a new battle)
 // ---------------------------------------------------------------------------
-function SetupForm({ onStart }) {
+function SetupForm({ onStart, onBack }) {
   const { teams, allCombos } = useApp();
   const [nameA, setNameA] = useState('');
   const [comboA, setComboA] = useState('');
@@ -260,6 +269,11 @@ function SetupForm({ onStart }) {
       >
         開始對戰
       </Button>
+      {onBack && (
+        <Button fullWidth onClick={onBack} sx={{ mt: 1 }}>
+          返回比赛模式
+        </Button>
+      )}
     </Box>
   );
 }
@@ -267,7 +281,7 @@ function SetupForm({ onStart }) {
 // ---------------------------------------------------------------------------
 // Ready confirm (雙端 Ready) — deep-green full-screen with X cross lines
 // ---------------------------------------------------------------------------
-export function ReadyConfirm({ battle, onBothReady, onBack, onLeave }) {
+export function ReadyConfirm({ battle, onBothReady, onBack, onLeave, seriesLabel = '' }) {
   const [readyA, setReadyA] = useState(false);
   const [readyB, setReadyB] = useState(false);
   const roundNo = battle.rounds.length + 1;
@@ -577,6 +591,11 @@ export function ReadyConfirm({ battle, onBothReady, onBack, onLeave }) {
         <Typography sx={{ mt: { xs: 2, sm: 7 }, fontFamily: FONT, fontWeight: 700, fontSize: 'clamp(1.1rem, 2.4vw, 2.6rem)', color: '#F4F4F4', letterSpacing: '.12em', '@media (orientation: landscape) and (max-height: 430px)': { mt: 1.5 } }}>
           VS
         </Typography>
+        {seriesLabel && (
+          <Typography noWrap sx={{ mt: .7, maxWidth: '32vw', overflow: 'hidden', textOverflow: 'ellipsis', color: '#BFC3C7', fontFamily: FONT, fontSize: 'clamp(.45rem, 1.15vw, .8rem)', letterSpacing: '.05em' }}>
+            {seriesLabel}
+          </Typography>
+        )}
       </Box>
 
       <Box
@@ -685,7 +704,7 @@ function FinishBtn({ type, side, onClick, disabled = false }) {
   );
 }
 
-export function BattleScreen({ battle, onRecord, onRematch, onLeave }) {
+export function BattleScreen({ battle, onRecord, onRematch, onLeave, seriesLabel = '' }) {
   const roundNo = battle.rounds.length + 1;
   const [roundLocked, setRoundLocked] = useState(false);
   const roundLockedRef = useRef(false);
@@ -768,6 +787,11 @@ export function BattleScreen({ battle, onRecord, onRematch, onLeave }) {
           <Typography sx={{ fontFamily: FONT, fontWeight: 700, fontSize: 'clamp(.65rem, 2.4vmin, 1.25rem)', color: '#BFC2F2', mt: .6, letterSpacing: '.12em' }}>
             {time}
           </Typography>
+          {seriesLabel && (
+            <Typography noWrap sx={{ mt: .25, color: '#AEB2B6', fontFamily: FONT, fontSize: 'clamp(.42rem, 1.25vmin, .68rem)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {seriesLabel}
+            </Typography>
+          )}
         </Box>
         <Box sx={{ minWidth: 0, overflow: 'hidden', justifySelf: 'end' }}>
           <NameTag name={battle.playerB.name} large />
@@ -970,8 +994,15 @@ export default function BattlePage() {
     recordRound,
     rematch,
     resetBattle,
+    tournament,
+    restartTournamentGame,
+    completeTournamentGame,
+    league,
+    restartLeagueGame,
+    completeLeagueGame,
   } = useApp();
   const [counting, setCounting] = useState(false);
+  const [mode, setMode] = useState(null);
   const countdownAudioRef = useRef(null);
 
   useEffect(() => {
@@ -997,16 +1028,39 @@ export default function BattlePage() {
     setCounting(true);
   };
 
-  if (!battle) {
+  if (!battle && (tournament || mode === 'tournament')) {
+    return <TournamentPage onBack={() => setMode(null)} />;
+  }
+
+  if (!battle && (league || mode === 'league')) {
+    return <PointsLeaguePage onBack={() => setMode(null)} />;
+  }
+
+  if (!battle && mode === 'quick') {
     return (
       <SetupForm
         onStart={(a, b, random) => {
           startBattle(a, b);
           if (random) randomizePosition();
         }}
+        onBack={() => setMode(null)}
       />
     );
   }
+
+  if (!battle) {
+    return (
+      <BattleModeSelector
+        onQuick={() => setMode('quick')}
+        onTournament={() => setMode('tournament')}
+        onLeague={() => setMode('league')}
+      />
+    );
+  }
+
+  const seriesLabel = battle.league
+    ? leagueSeriesLabel(league, battle)
+    : tournamentSeriesLabel(tournament, battle);
 
   if (counting) {
     return (
@@ -1027,11 +1081,30 @@ export default function BattlePage() {
         onBothReady={startCountdown}
         onBack={resetBattle}
         onLeave={resetBattle}
+        seriesLabel={seriesLabel}
       />
     );
   }
 
   if (battle.status === 'finished') {
+    if (battle.tournament && tournament) {
+      return (
+        <TournamentGameResult
+          battle={battle}
+          tournament={tournament}
+          onContinue={completeTournamentGame}
+        />
+      );
+    }
+    if (battle.league && league) {
+      return (
+        <LeagueGameResult
+          battle={battle}
+          league={league}
+          onContinue={completeLeagueGame}
+        />
+      );
+    }
     return (
       <ResultPanel
         battle={battle}
@@ -1046,8 +1119,13 @@ export default function BattlePage() {
     <BattleScreen
       battle={battle}
       onRecord={(winner, type) => recordRound(winner, type)}
-      onRematch={rematch}
+      onRematch={battle.tournament
+        ? restartTournamentGame
+        : battle.league
+          ? restartLeagueGame
+          : rematch}
       onLeave={resetBattle}
+      seriesLabel={seriesLabel}
     />
   );
 }

@@ -11,6 +11,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, cleanup } from '@testing-library/react';
 import { AppProvider, useApp } from './AppContext';
 import { FINISH, WIN_SCORE } from '../lib/scoring';
+import { TOURNAMENT_FORMAT, findTournamentMatch } from '../lib/tournament';
+import { LEAGUE_PAIRING, findLeagueMatch } from '../lib/league';
 
 function finishBattle(actions, winner = 'A', finish = FINISH.SPIN) {
   act(() => actions.startBattle({ name: 'A' }, { name: 'B' }));
@@ -47,5 +49,73 @@ describe('AppContext — history aggregation', () => {
     // NOT be added again. The `historyGuard` resets on reload, so the current
     // implementation re-adds it -> length becomes 2 (BUG).
     expect(r2.current.history).toHaveLength(1);
+  });
+});
+
+describe('AppContext — tournament integration', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => cleanup());
+
+  const finishCurrentGame = (actions) => {
+    act(() => actions.beginBattle());
+    for (let i = 0; i < WIN_SCORE; i += 1) {
+      act(() => actions.recordRound('A', FINISH.SPIN));
+      if (i < WIN_SCORE - 1) act(() => actions.beginBattle());
+    }
+  };
+
+  it('runs two first-to-four games before completing a best-of-three match', () => {
+    const { result } = renderHook(() => useApp(), { wrapper: AppProvider });
+    act(() => result.current.createTournament(['A', 'B'], TOURNAMENT_FORMAT.BEST_OF_3));
+    act(() => result.current.startNextTournamentMatch());
+
+    const matchId = result.current.tournament.currentMatchId;
+    expect(result.current.battle.tournament.gameNumber).toBe(1);
+    finishCurrentGame(result.current);
+    act(() => result.current.completeTournamentGame());
+
+    expect(findTournamentMatch(result.current.tournament, matchId).gameWinsA).toBe(1);
+    expect(result.current.battle.status).toBe('ready');
+    expect(result.current.battle.tournament.gameNumber).toBe(2);
+
+    finishCurrentGame(result.current);
+    act(() => result.current.completeTournamentGame());
+
+    expect(result.current.tournament.status).toBe('finished');
+    expect(result.current.battle).toBeNull();
+    expect(result.current.history).toHaveLength(2);
+  });
+});
+
+describe('AppContext — points league integration', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => cleanup());
+
+  const finishCurrentGame = (actions) => {
+    act(() => actions.beginBattle());
+    for (let index = 0; index < WIN_SCORE; index += 1) {
+      act(() => actions.recordRound('A', FINISH.SPIN));
+      if (index < WIN_SCORE - 1) act(() => actions.beginBattle());
+    }
+  };
+
+  it('records a completed league match, awards points and returns to the schedule', () => {
+    const { result } = renderHook(() => useApp(), { wrapper: AppProvider });
+    act(() => result.current.createLeague(['A', 'B', 'C'], {
+      pairing: LEAGUE_PAIRING.ROUND_ROBIN,
+      rounds: 1,
+      winnerPoints: 2,
+    }));
+    act(() => result.current.startNextLeagueMatch());
+
+    const matchId = result.current.league.currentMatchId;
+    expect(result.current.battle.league.gameNumber).toBe(1);
+    finishCurrentGame(result.current);
+    act(() => result.current.completeLeagueGame());
+
+    expect(findLeagueMatch(result.current.league, matchId).status).toBe('completed');
+    expect(result.current.league.status).toBe('ongoing');
+    expect(result.current.battle).toBeNull();
+    expect(result.current.history).toHaveLength(1);
   });
 });
