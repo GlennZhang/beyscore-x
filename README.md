@@ -2,6 +2,30 @@
 
 > Beyblade X（战斗陀螺 X）玩家的对战计分与赛事管理工具 —— 纯前端网页版 MVP，数据本地存储，**不实现多人联机 / 扫码加入 / 任何后端或硬件链接**。
 
+🌐 **在线预览**：https://beyscore-x.pages.dev/
+
+[![GitHub](https://img.shields.io/badge/GitHub-GlennZhang/beyscore--x-181717?logo=github)](https://github.com/GlennZhang/beyscore-x)
+
+---
+
+## 截图预览
+
+<table>
+  <tr>
+    <td width="25%"><img src="public/assets/screenshots/battle-setup.png" alt="比赛模式选择" width="100%"/><br/><em>比赛模式选择</em></td>
+    <td width="25%"><img src="public/assets/screenshots/battle-form.png" alt="新建对战" width="100%"/><br/><em>新建对战</em></td>
+    <td width="25%"><img src="public/assets/screenshots/battle-ready.png" alt="准备确认（TAP TO READY）" width="100%"/><br/><em>准备确认</em></td>
+    <td width="25%"><img src="public/assets/screenshots/battle-countdown.png" alt="全屏倒计时" width="100%"/><br/><em>全屏倒计时</em></td>
+  </tr>
+  <tr>
+    <td width="25%"><img src="public/assets/screenshots/battle-screen.png" alt="黑底计分界面" width="100%"/><br/><em>对战计分</em></td>
+    <td width="25%"><img src="public/assets/screenshots/battle-scored.png" alt="结算画面" width="100%"/><br/><em>结算画面</em></td>
+    <td width="25%"><img src="public/assets/screenshots/my-beyblades.png" alt="我的陀螺 / 战队管理" width="100%"/><br/><em>战队与陀螺</em></td>
+    <td width="25%"><img src="public/assets/screenshots/parts-catalog.png" alt="零件图鉴" width="100%"/><br/><em>图鉴</em></td>
+    <td width="25%"><img src="public/assets/screenshots/history.png" alt="历史与统计" width="100%"/><br/><em>历史与统计</em></td>
+  </tr>
+</table>
+
 ---
 
 ## 1. 需求背景
