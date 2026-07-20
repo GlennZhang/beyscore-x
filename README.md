@@ -6,24 +6,22 @@
 
 ## 1. 需求背景
 
-原始需求：把 App Store 上的 **Beyscore X**（[App Store 链接](https://apps.apple.com/tw/app/beyscore-x/id6782795887)，一款 Beyblade X 对战计分与赛事管理工具）做成网页版。
-
 约束：
+
 - **不需要实现硬件连接**：陀螺发射器、蓝牙/扫码对战等依赖硬件或后端的模块全部跳过。
 - **纯前端 MVP**：所有数据存在浏览器 `localStorage`，可离线运行，无需服务器。
-- 还原 App 的**比赛模式（Battle Mode）**体验：双端 Ready → 全屏倒计时 → 局内计分界面。
 
 ---
 
 ## 2. 功能特性
 
-| 模块 | 功能 |
-|------|------|
+| 模块                 | 功能                                                                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **对战（比赛模式）** | 两人对战计分；每局双端 Tap-to-Ready 确认；全屏倒计时（READY→3→2→1→GO→SHOOT）；黑底局内计分界面（SPIN/OVER/BURST/XTREME + 平手 + 發射失敗 + 重賽 + 離開）；先到 4 分获胜 |
-| **计分规则** | SPIN Finish +1 / OVER Finish +2 / BURST Finish +2 / XTREME Finish +3 / Draw 平手 0 / 發射失敗 对方 +1；每局记录胜方、终结类型、时间戳；每 3 局提示重排；随机站位 |
-| **我的陀螺 / 战队** | 战队（Team）与陀螺组合（Combo）增删改查；Standard 系统（Blade/Ratchet/Bit）与 CX 系统（Lock Chip / Main / Over / Assist Blade / Ratchet / Bit）双套部件 |
-| **产品与零件图鉴** | 223 个真实零件 + 146 条官方产品（另保留301条社区配置变体）；支持多语言 / Code 搜索、系统与分类过滤，并内置离线图片 |
-| **历史与统计** | 对战历史（可展开每局）；排行榜（按胜场 / 胜率排序）；战绩统计（总对战 / 回合 / 参战玩家 / 终结方式分布） |
+| **计分规则**         | SPIN Finish +1 / OVER Finish +2 / BURST Finish +2 / XTREME Finish +3 / Draw 平手 0 / 發射失敗 对方 +1；每局记录胜方、终结类型、时间戳；每 3 局提示重排；随机站位        |
+| **我的陀螺 / 战队**  | 战队（Team）与陀螺组合（Combo）增删改查；Standard 系统（Blade/Ratchet/Bit）与 CX 系统（Lock Chip / Main / Over / Assist Blade / Ratchet / Bit）双套部件                 |
+| **产品与零件图鉴**   | 223 个真实零件 + 146 条官方产品（另保留301条社区配置变体）；支持多语言 / Code 搜索、系统与分类过滤，并内置离线图片                                                      |
+| **历史与统计**       | 对战历史（可展开每局）；排行榜（按胜场 / 胜率排序）；战绩统计（总对战 / 回合 / 参战玩家 / 终结方式分布）                                                                |
 
 ---
 
@@ -74,16 +72,16 @@ storage.js  →  localStorage 持久化
 
 设计为一个**无 DOM / 无 React 依赖的纯函数模块**，便于单元测试：
 
-| 导出 | 说明 |
-|------|------|
-| `WIN_SCORE` | 目标分（Beyblade X 标准规则：先到 `4` 分获胜） |
-| `FINISH` / `FINISH_META` | 终结类型枚举与各类型元数据（`points` 分值、`label`、`zh` 文案、`color`） |
-| `createBattle(a, b)` | 创建一场空对战 |
-| `beginBattle()` | 开始（倒计时结束后调用） |
-| `recordRound(winner, type)` | 记录一局并累加比分（加分使用 `FINISH_META[type].points`，非硬编码） |
-| `drawPosition()` | 随机站位（Position Draw） |
-| `shouldReorganize(roundIndex)` | 每 3 局触发重排提示 |
-| `battleSummary(battle)` | 汇总胜者、终结方式分布、回合数 |
+| 导出                           | 说明                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------ |
+| `WIN_SCORE`                    | 目标分（Beyblade X 标准规则：先到 `4` 分获胜）                           |
+| `FINISH` / `FINISH_META`       | 终结类型枚举与各类型元数据（`points` 分值、`label`、`zh` 文案、`color`） |
+| `createBattle(a, b)`           | 创建一场空对战                                                           |
+| `beginBattle()`                | 开始（倒计时结束后调用）                                                 |
+| `recordRound(winner, type)`    | 记录一局并累加比分（加分使用 `FINISH_META[type].points`，非硬编码）      |
+| `drawPosition()`               | 随机站位（Position Draw）                                                |
+| `shouldReorganize(roundIndex)` | 每 3 局触发重排提示                                                      |
+| `battleSummary(battle)`        | 汇总胜者、终结方式分布、回合数                                           |
 
 ### 4.4 比赛模式 UI 还原（BattlePage.jsx）
 
@@ -145,17 +143,17 @@ beyscore-x/
 
 该站**没有 REST API**，其"接口"本质是 GitHub 仓库 [`go-shoot/x`](https://github.com/go-shoot/x) 中 **`db/` 目录的一批静态 JSON 文件**（GitHub Pages 直接部署仓库内容）。核心文件：
 
-| 文件 | 内容 |
-|------|------|
-| `part-blade.json` | Blade（刃击环） |
+| 文件                      | 内容                                        |
+| ------------------------- | ------------------------------------------- |
+| `part-blade.json`         | Blade（刃击环）                             |
 | `part-blade-divided.json` | 分裂型 Blade（CX 的 Main/Over/Assist 组件） |
-| `part-blade-collab.json` | 合作款 Blade |
-| `part-ratchet.json` | Ratchet（核轮） |
-| `part-bit.json` | Bit（轴心） |
-| `prod-beys.json` | 陀螺产品（含组合规格） |
-| `prod-gear.json` | 发射器 / 装备 |
-| `prod-keihin.json` | 配件 |
-| `meta.json` | 字段字典 + 术语表（中文）+ CX 组件拆解规则 |
+| `part-blade-collab.json`  | 合作款 Blade                                |
+| `part-ratchet.json`       | Ratchet（核轮）                             |
+| `part-bit.json`           | Bit（轴心）                                 |
+| `prod-beys.json`          | 陀螺产品（含组合规格）                      |
+| `prod-gear.json`          | 发射器 / 装备                               |
+| `prod-keihin.json`        | 配件                                        |
+| `meta.json`               | 字段字典 + 术语表（中文）+ CX 组件拆解规则  |
 
 ### 6.2 数据结构要点
 
@@ -235,7 +233,3 @@ npm test           # 运行测试（等同 npx vitest run）
 - [ ] 数据导出 / 导入（JSON 备份）
 - [ ] 可选：简体中文切换（OpenCC）
 - [ ] 可选：端到端 UI 测试
-
----
-
-_项目由软件开发团队（主理人齐活林 / 工程师寇豆码 / QA 严过关）协作交付。_
