@@ -8,11 +8,15 @@ import {
   Paper,
   Container,
   Box,
+  IconButton,
 } from '@mui/material';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ToysIcon from '@mui/icons-material/Toys';
 import HistoryIcon from '@mui/icons-material/History';
+import GitHubIcon from '@mui/icons-material/GitHub';
+
+const GITHUB_REPO = 'https://github.com/GlennZhang/beyscore-x';
 
 const TABS = [
   { key: 'battle', label: '对战', icon: <SportsKabaddiIcon /> },
@@ -33,6 +37,22 @@ export default function Layout({ tab, setTab, children }) {
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: 1 }}>
             BEYSCORE <Box component="span" sx={{ color: 'secondary.main' }}>X</Box>
           </Typography>
+          <IconButton
+            component="a"
+            href={GITHUB_REPO}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub 仓库"
+            size="small"
+            sx={{
+              ml: 1.5,
+              color: 'inherit',
+              p: 0.75,
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.12)' },
+            }}
+          >
+            <GitHubIcon fontSize="small" />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
